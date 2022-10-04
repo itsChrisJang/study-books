@@ -78,5 +78,175 @@
 - 리프 노드들은 linked-list 형태로 서로 연결되어 있음.
 - 블록 지향적인 스토리지 환경에서 효율적인 검색을 위해 데이터를 저장하는 방법
 
+#### B-Tree 인덱스의 구조
+- 루트 ㄷ 브랜치 ㄷ 리프
+- 인덱스의 리프 노드는 실제 데이터 레코드를 찾아가기 위한 주소 값을 가짐
+- 페이지(Page)
+  - InnoDB가 디스크에 데이터를 읽고 쓰는 가장 기본적인 단위
+  - (=16KB)
+- 인덱스도 페이지 단위로 관리되며, 1개의 노드는 1개의 페이지 안에 포함될 수 있는 크기
+
+#### 클러스터링 인덱스
+- 테이블의 레코드는 디스크 상에 PK의 순서대로 저장됨
+- 정렬되어 저장되어 있으므로 PK로 row를 찾는 것은 굉장히 빠름
+- InnoDB의 모든 인덱스는 레코드 주소로 PK의 값을 가짐
+  - PK의 값이 변경되는 경우 디스크에서의 위치가 바뀜(재 정렬)
+    - 레코드 주소가 변경됨
+    - 인덱스가 레코드의 주소를 가지고 있다면 모든 인덱스에 대해서도 갱신 작업 필요
+    - 차라리 레코드 주소 대신 PK 값을 가지고 있는 것이 나음
+
+#### 다중 컬럼 인덱스 (Multiple Column Index)
+- 두 개 이상의 컬럼으로 구성된 인덱스 (=Concatenated Index)
+- 오른쪽 컬럼은 왼쪽 컬럼 값에 의존해서 정렬됨
+- 인덱스 내에서 각 컬럼의 위치(순서)가 매우 중요
+- 선택도(기수성)이 높은 컬럼이 앞에 오는 것이 좋음
+
+#### B-Tree 인덱스 사용에 영향을 미치는 요소
+- 100% 일치 또는 값의 앞 부분(Left-most part)만 일치하는 경우에만 사용 가능
+  - 부등호 비교(<>, !=, NOT ~)
+  - 뒤 부분 값 일치(LIKE '%...)
+  - 인덱스 값의 변형이 가해진 후 비교되는 경우(이미 인덱스에 존재하지 않는 값)
+- 인덱스 키 값의 크기
+  - B-Tree의 자식 노드 개수는 가변
+  - InnoDB의 모든 페이지 크기는 16KB
+  - 인덱스 키 값이 커지면 하나의 페이지에 저장할 수 있는 수가 줄어듦
+    - 페이지 수가 늘어남 => 디스크 상의 블록 수가 늘어남
+    - 디스크를 읽는 횟수가 증가 => 느려짐
+    - 메모리(버퍼, 캐시)에 캐시해 둘 수 있는 인덱스 레코드 수가 줄어듬(메모리 효율 감소)
+- 선택도(Selectivity) != 기수성(Cardinality)
+  - 선택도 : 인덱스 내의 키 값 중 유니크한 값의 비율 (기수성 : 유니크 수)
+    - A : SELECT COUNT(*) FROM users;
+    - B : SELECT COUNT(DISTINCT user_name) FROM users;
+    - user_name 컬럼의 selectivity = B/A
+  - 이상적인 선택도는 1 (Unique, Not NULL 컬럼에서만 가능)
+  - 인덱스의 선택도가 매우 낮은 경우에는 사용되지 않음
+- 읽어야 하는 레코드의 건수
+  - 인덱스를 통해 테이블의 레코드를 읽는 것은 인덱스를 거치지 않고 테이블의 레코드를 읽는 것보다 높은 비용(4~5배)이 드는 작업
+    - 인덱스를 읽은(순차 I/O) 후 찾은 row 수 만큼 데이블을 읽어야(랜덤 I/O) 함
+  - 인덱스를 읽은 후 대상 row를 테이블에서 찾기 VS 테이블만 읽어 대상 row를 찾기
+    - 인덱스를 사용했을 때 예상되는 결과 row의 수가 테이블 전체의 row 수 중 20~25% 이상인 경우 인덱스를 사용하지 않고 테이블을 처음부터 끝까지 읽어서 처리함(순차 I/O의 효율성) 
+
+#### 컬럼에 인덱스가 존재함에도 사용하지 않는 케이스
+1. 부정형 조건
+  - WHERE column <> 'N'
+  - WHERE column != 'N'
+  - WHERE column NOT IN (10, 11, 12)
+  - WHERE column IS NOT NULL
+  - WHERE column NOT BETWEEN 'B' AND 'C'
+2. LIKE '%??' (후방일치)
+  - WHERE column LIKE '%길동'
+  - WHERE column LIKE '_길동'
+  - WHERE column LIKE '%길%'
+3. 인덱스 컬럼의 변형(함수, 연산자)
+  - WHERE SUBSTRING(column, 1, 1) = 'A'
+    - => WHERE column LIKE 'A%'
+  - WHERE column + 1 > 10
+    - => WHERE column > 9
+4. 데이터 타입이 서로 다른 비교 (인덱스 컬럼의 형변환 발생)
+  - WHERE char_column = 10
+    - 문자 컬럼이 숫자와 비교되는 경우 문자 컬럼이 숫자로 자동 형변환 된 후 비교됨
+    - WHERE char_column = '10'
+5. 다중 컬럼 인덱스인 경우
+  - INDEX idx_test(column1, column2, column3, ... columnN)
+  - 맨 좌측 컬럼에 대한 조건이 없는 경우
+    - WHERE column2 = 1 AND column3 = 2  -- column1 ??
+  - 맨 좌측 컬럼의 비교 조건이 인덱스 사용 불가 조건 중 하나인 경우
+    - WHERE column1 <> 1 AND column2 = 2
+    - WHERE column1 + 1 = 3 AND column2 > 3
+6. WHERE 조건이 없는 경우
+  - SELECT user_name FROM users; -- WHERE ??
+7. WHERE 절에 인덱스로 지정된 컬럼에 대한 조건이 없는 경우
+  - 인덱스는 column1에만 존재할 때
+  - WHERE column2 = 1 AND column3 = 2
+8. 인덱스의 선택도가 나쁠 빼
+  - status 컬럼에는 'YES'가 99건, 'NO'가 1건 존재할 때
+  - WHERE status = 'YES'
+    - 인덱스 99건을 읽은 후 테이블에서 99건을 다시 읽어야 함
+  - 인덱스를 통해 읽어야 할 레코드 건수가 전체의 20~25% 이상이면 
+9. WHERE 절의 조건을 만족하는 레코드가 너무 많은 경우
+  - column1, column2 가 다중 컬럼 인덱스이고
+  - 테이블에 100건의 데이터가 있을 때
+  - WHERE column1 > AND column2 >0; -- 99건이 조회 되는 경우
+10. 인덱스가 존재하는 컬럼에 IN (SELECT ...)를 사용
+  - column1에 인덱스가 존재할 때 
+  - WHERE column1 IN (SELECT value FROM table ...) AND column2 = 3  
+    - IN 조건을 제외한 나머지 WHERE 조건을 만족하는 모든 row에 대해 루프를 돌면서 "SELECT ..."를 실행한 결과 값과 비교하는 형태로 대부분 실행됨
+    > pseudo code:
+    > 
+    > for (row : 나머지 WHERE 조건을 만족하는 rows) {
+    > 
+    >     array[] values = (SELECT value FROM table ...)
+    > 
+    >     if (row.column1 IN (values) {    // true of false
+    > 
+    >         // row는 모든 조건을 만족
+    >     }
+    > 
+    > }
+    - WHERE column1 IN (1, 2, 3, ...) 형태로 변경해야함
+
+
+#### 커버링 인덱스(Covering Index)
+- SELECT를 수행할 때 테이블을 읽지 않고 인덱스만 읽어서 처리되는 것
+- 인덱스만 읽어서 속도가 빠름
+- WHERE 조건을 비교하기 위한 컬럼 값과 SELECT에 명시된 컬럼이 인덱스에 모두 존재하는 경우
+  - > users 테이블에 idx_user(age, user_name, reg_date)가 존재
+    > > SELECT user_name, reg_date
+    > >
+    > > FROM users
+    > >
+    > > WHERE age BETWEEN 10 AND 12
+    > 
+    > idx_user 인덱스에 모든 컬럼이 존재하므로 테이블을 읽을 필요가 없음
+
+#### Duplicate/Redundant Index
+- 테이블에 동일한 컬럼에 대해 여러 개의 인덱스가 존재하는 것
+  - PRIMARY KEY(id)
+  - UNIQUE KEY uk_id(id) => X
+  - KEY key_id(id) => X
+- 다중 컬럼 인덱스인 경우 컬럼 순서가 다르면 중복이 아님
+  - index (a, b) != index(b,a)
+- 다른 인덱스의 앞쪽 부분 집합으로 정의된 인덱스
+  - index_a (A) => X
+  - index_ab (A, B)
+    - 컬럼수가 많은 인덱스가 사용될 가능성이 높음. 선택도 높거나 커버링 인덱스가 될 가능성이 큼
+  - 만일 B 컬럼의 길이가 매우 긴 경우에는 index_a가 사용될 수 있음
+    - A : int, B : varchar(255)
+    - index_ab를 읽는 것 보다 index_a를 읽는 것이 훨씬 빠름
+
+#### B-Tree 인덱스의 정렬 및 스캔 방향
+- MySQL에서 인덱스의 키 값은 항상 오름차순으로만 정렬됨
+  - MySQL에서 인덱스 생성 구문의 ASC, DESC는 의미 없으며, 미래의 호환성을 위해서 존재함.
+- 인덱스를 거꾸로 끝에서부터 읽으면 내림차순으로 정렬된 인덱스처럼 사용할 수 있음.
+
+#### Analyze(통계 정보 수집)의 필요성
+- InnoDB 테이블의 경우, 인덱스에 대한 통계 정보를 관리하고 각 통계 정보를 기반으로 쿼리의 실행 계획을 수립
+- 인덱스의 통계 정보 확인
+  - mysql> SHOW INDEX FROM table;
+- MySQL은 통계 정보를 자동으로 자주 갱신함
+- analyze 명령으로 통계 정보를 수집할 수 있음
+  - 테이블의 데이터가 별로 없는 경우 (주로 개발용 데이터베이스)
+  - 단시간에 대량의 데이터가 늘거나 줄어든 경우
+  - 주의 : InnoDB는 테이블이 잠겨서 읽기/쓰기 처리가 불가
+
+#### 인덱스와 잠금
+- InnoDB의 잠금은 레코드를 잠그는 것이 아니라 인덱스를 잠그는 방식으로 처리됨
+  - 변경해야 할 레코드를 찾기 위해 검색한 인덱스의 레코드를 모두 잠금
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 index를 확인하는 조건은?
