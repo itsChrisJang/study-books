@@ -1,4 +1,4 @@
-# 스프링으로 시작하는 리액티브 프로그래밍
+# Part01. 리액티브 프로그래밍(Reactive Programming)
 ## Chapter 02. 리액티브 스트림즈(Reactive Streams)
 > Chatper 2에서는 리액티브 스트림즈가 무엇인지 살펴보고, 리액티브 스트림즈의 핵심 컴포넌트인 Publisher 와 Subscriber 의 동작 과정을 자세히 알아보자.
 ### 2.1. 리액티브 스트림즈(Reactive Streams)란?

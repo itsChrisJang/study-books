@@ -1,4 +1,4 @@
-# 스프링으로 시작하는 리액티브 프로그래밍
+# Part01. 리액티브 프로그래밍(Reactive Programming)
 ## Chapter03. Blocking I/O와 Non-Blocking I/O
 > - Chapter 2에서는 '리액티브 스트림즈는 데이터 스트림을 Non-Blocking 이면서 비동기적인 방식으로 처리하기 위한 리액티브 라이브러리의 표준 사양이다'라고 설명했다.
 > - Non-Blocking 이 무엇을 뜻하는지 이해해보자.

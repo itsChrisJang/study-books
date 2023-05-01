@@ -1,4 +1,4 @@
-# 스프링으로 시작하는 리액티브 프로그래밍
+# Part01. 리액티브 프로그래밍(Reactive Programming)
 ## Chapter 01. 리액티브 시스템과 리액티브 프로그래밍
 ### 1.1. 리액티브 시스템(Reactive System) 이란?
 - Q : 리액티브 시스템에서 리액티브(Reactive)란 용어는 무엇을 뜻하는 것일까요?
