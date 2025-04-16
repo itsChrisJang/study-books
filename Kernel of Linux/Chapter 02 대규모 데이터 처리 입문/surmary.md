@@ -33,3 +33,10 @@
 
 ![Machine Instruction Cycle](image/machine_Instruction_cycle.png)
 
+- Source : 
+  - read next byte from disk file X into my variable Y
+- Binary : 
+  - prepare all parameters(for disk read)
+  - execute chmodk instruction
+
+- At run time (part I : hardware) 
