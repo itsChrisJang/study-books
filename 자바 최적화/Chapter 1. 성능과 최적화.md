@@ -110,28 +110,28 @@ JVM 성능 튜닝은 기술, 방법론, 정량적 측정값, 툴을 망라한 �
 또 구체적인 상호 관계는 시스템이 풀 가동 중인지 여부에 따라 달라집니다.   
 
 ## 1.5 성능 그래프 읽기
-![성능 엘보](Documents/study/study-books/자바 최적화/imageents/study/study-books/자바 최적화/image/performance_elbow.png)
+![성능 엘보](image/performance_elbow.png)   
 부하가 증가하면서 예기치 않게 저하(지연)가 발생한 그래프입니다.   
 이런 형태를 보통 성능 엘보라고 합니다.
 
-![준-선형적 확장](Documents/study/study-books/자바 최적화/imageents/study/study-books/자바 최적화/image/near_linear_extenstion.png)
+![준-선형적 확장](image/near_linear_extenstion.png)   
 위와 반대로 클러스터에 장비를 추가함에 따라 선형적으로 처리율이 확장되는 아주 운이 좋은 케이스입니다.   
 이렇게 이상적인 모습에 가까운 결과는 환경이 극단적으로 순조로울 때(예: 서버 하나에 세션 어피니티(세션 고정)가 필요없는, 무상태 프로토콜을 확장하는 경우)나 가능합니다.
 
-![암달의 법칙](Documents/study/study-books/자바 최적화/imageents/study/study-books/자바 최적화/image/amdahl_law.png)
+![암달의 법칙](image/amdahl_law.png)   
 암달에 따르면 근본적으로 확장성에는 제약이 따릅니다.   
 아래 그래프는 태스크를 처리할 때 프로세서 개수를 늘려도 실행 속도를 최대 어느 정도까지 높일 수 있는지를 나타낸 그래프입니다.
 
 하부 태스크를 75%, 90%, 95% 세 가지 다른 비율로 병렬화했는데, 그래프를 잘 보면 워크 로드에 반드시 순차 실행되어야 할 작업 조각이 하나라도 있으면 선형 확장은 처음부터 불가하며 확장 가능한 한계점도 뚜렷하다는 사실을 알 수 있습니다.
 
-![건강한 메모리 사용 현황](Documents/study/study-books/자바 최적화/imageents/study/study-books/자바 최적화/image/well_used_memory_usage.png)
+![건강한 메모리 사용 현황](image/well_used_memory_usage.png)   
 JVM 가비지 수집 서브시스템의 메모리 사용 패턴은 그 하부 기술 때문에 부하가 별로 없는 건강한 애플리케이션도 톱니 모양을 나타냅니다.
 
-![문제가 있는 할당률 뷴포](Documents/study/study-books/자바 최적화/imageents/study/study-books/자바 최적화/image/problematic_allocation_rate_distribution.png)
+![문제가 있는 할당률 뷴포](image/problematic_allocation_rate_distribution.png)   
 피보나치 수열을 계산하는 애플리케이션을 실행하여 얻은 그래프로, 애플리케잉션의 메모리 할당률을 성능 튜닝할 때 아주 중요한 메모리 그래프입니다.
 
 동일한 툴로 측정한 다른 그래프를 보면, 바로 이 지점에서 애플리케이션에 심각한 가비지 수집 문제가 발생했고 가비지 수집 스레드들이 서로 CPU 경합을 벌인 탓에 메모리를 충분히 할당받지 못했다는 사실을 알 수 있습니다.
 
-![부하가 높을 때 상당한 지연 발생](Documents/study/study-books/자바 최적화/imageents/study/study-books/자바 최적화/image/significant_delay_under_high_load.png)
+![부하가 높을 때 상당한 지연 발생](image/significant_delay_under_high_load.png)   
 위 그림은 시스템 리소스가 누수될 때 흔히 나타나는 징후입니다.   
 부하가 증가하면서 지표가 차츰 악화되다가 결국 시스템 성능이 급락하는 변곡점에 이르게 됩니다.
