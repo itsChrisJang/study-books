@@ -46,3 +46,62 @@ javac는 컴파일하는 동안 최적화는 거의 하지 않기 때문에 그 
 
 컴파일러가 생성한 클래스 파일은 VM 명세서에 아주 명확히 잘 정의된 구조(아래 그림)를 갖추고 있습니다.
 ![클래스 파일 해부도](image/class_file_anatomy.png)
+
+모든 클래스 파일은 0xCAFEBABE라는 매직 넘버, 즉 이파일이 클래스 파일임을 나타내는 4바이트 16진수로 시작합니다.   
+그다음 4바이트는 클래스 파일을 컴파일할 때 꼭 필요한 메이저,마이너 버전 숫자입니다.   
+클래스를 실행하는 대상 JVM이 컴파일한 JVM보다 버전이 낮으면 안되겠죠?   
+메이저/마이너 버전은 클래스로더의 호환성 보장을 위해 검사하고 호환되지 않는 버전의 클래스 파일을 만나면 런타임에 UnsupportedClassVersionError 예외가 납니다.   
+런타임 버전이 컴파일된 클래스 파일 버전보다 낮으면 안 되니까요.
+
+상수 풀에는 코드 곳곳에 등장하는 상숫값(예: 클래스명, 인터페이스명, 필드명 등)이 있습니다.   
+JVM은 코드를 실행할 때 런타임에 배치된 메모리 대신, 이 상수 풀 테이블을 찾아보고 필요한 값을 참조합니다.
+
+액세스 플래그는 클래스에 적용한 수정자를 결정합니다.   
+플래그 첫 부분은 일반 프로퍼티로 public 클래스인지, 그다음이 상속이 금지된 final 클래스인지를 나타냅니다.   
+또 이 클래스 파일이 인터페이스인지, 추상 클래스인지도 액세스 플래그로 표시합니다.   
+플래그 끝부분은 클래스 파일이 소스 코드에 없는 합성 클래스인지 애너테이션 타입인지, ENUM인지를 각각 나태냅니다.
+
+this 클래스, 슈퍼클래스, 인터페이스 엔트리는 클래스에 포함된 타입 계층을 나타내며 각각 상수 풀을 가리키는 인덱스로 표시합니다.   
+필드와 메서드는 시그니처 비슷한 구조를 정의하고 여기에 수정자도 포함되어 있습니다.   
+속성 세트는 더 복잡하고 크기가 고정되지 않은 구조를 나타내는 데 쓰입니다.   
+예를 들어 메서드는 Code 속성으로 특정 메서드와 연관된 바이트코드를 나타냅니다.
+
+![클래스 파일 암기요령](image/class_file_memorization_tips.png)
+
+```java
+public class HelloWorld {
+    public static void main(String[] args) {
+            for (int i = 0; i < 10; i++) {
+            System. out. println("HeUo World");
+        }
+    }
+}
+```
+
+자바 SDK에는 클래스 파일 내부를 볼 수 있는 javap라는 역어셈블러가 있습니다.   
+javap -c HelloWorld 명령을 실행하면 HelloWorld 클래스 파일을 확인할 수 있습니다.
+
+```class
+public class HelloWorld {
+    public HelloWorld();
+
+        Code:
+            0：aload_0
+            1:invokespecial #1 // Method java/lang/Object."<init>":()V=
+            4:return
+    public static void main(java.lang.String[]);
+        Code:
+            0：iconst_0
+            1：istore_l
+            2：iload_l
+            3：bipush 10
+            5：if_icmpge 22
+            8：getstatic #2 // Field java/lang/System.out
+            11：ldc #3 // String Hello World
+            13:invokevirtual #4 // Method java/io/PrintStream.println
+            16:iinc 1,1
+            19： goto 2
+            22:return
+}
+```
+
