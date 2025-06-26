@@ -430,6 +430,16 @@ public final native void wait (long timeout) throws InterruptedException;
 
 편의상 시스템 시간을 조회하는 쉬운 예를 들어보겠습니다.
 
+`System.currentTimeMillis()`는 Java에서 현재 시간을 밀리초 단위로 가져오는 API입니다.  
+하지만 실제 구현은 **C++ 네이티브 코드**로 되어 있으며, **JNI(자바 네이티브 인터페이스)**를 통해 **OS 의존 코드**까지 연결됩니다.
+
+![핫스팟 호출 스택](image/hotspot_call_stack.png)
+
+JVMCurrentTimeMilLis( )는 VM진입점에 해당하는 메서드를 호출합니다.   
+모양은 C함수지만 본모습은 C호출 관례에 따라 익스포트된 C++함수입니다.     
+결국 OpenJDK 매크로 2개로 감싼 os::javaTimeMillis() 를 호출하는 구조입니다.    
+이 메서드는 os 이름 공간에 정의 되어 있고 당연히 OS에 의존합니다.
+
 ## 3.9 마치며
 
 
